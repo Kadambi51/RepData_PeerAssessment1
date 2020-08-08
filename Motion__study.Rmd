@@ -1,0 +1,117 @@
+---
+title: "MOTION STUDY-from activity Monitoring data"
+output: html_document
+---
+The following report addresses the various questions as per the assigment. The data can be downloaded from [Acivity Monitoring Data]("https://d396qusza40orc.cloudfront.net/repdata%2Fdata%2Factivity.zip"). The data used consists of following variables:
+
+1. steps: Number of steps taking in a 5-minute interval (missing values are coded as \color{red}{\verb|NA|}NA)
+2. date: The date on which the measurement was taken in YYYY-MM-DD format
+3. interval: Identifier for the 5-minute interval in which measurement was taken
+
+Following is the code for reading the data:
+
+```{r,echo=TRUE}
+library(dplyr)
+fileURL<-"https://d396qusza40orc.cloudfront.net/repdata%2Fdata%2Factivity.zip"
+setwd("C:/Users/Kadambi cartel/Downloads/Motion Study")
+download.file(fileURL,destfile="./motion_study.zip")
+unzip("./motion_study.zip",exdir="./motion_study")
+data<-read.csv("./motion_study/activity.csv")
+head(data)
+```
+
+
+Histogram of the total number of steps taken each day:
+
+```{r,echo=TRUE}
+data1<-group_by(data,date)
+steps_by_day<-summarise(data1, total=sum(steps))
+hist(steps_by_day$total,xlab="Total Number of steps in a day",main="Histogram of total Number of Steps")
+```
+
+Mean and median number of steps taken each day:
+
+```{r,echo=TRUE}
+data3<-summarise(data1,mean_of_data=mean(steps,na.rm=TRUE),median_data=median(steps,na.rm=TRUE))
+head(data3)
+```
+
+Time series plot of the average number of steps taken:
+
+```{r,echo=TRUE}
+steps_by_interval <- aggregate(steps ~ interval, data, mean)
+plot(steps_by_interval$interval, steps_by_interval$steps, type='l', 
+     main="Average number of steps over all days", xlab="Interval", 
+     ylab="Average number of steps")
+```
+
+The 5-minute interval that, on average, contains the maximum number of steps:
+
+```{r,echo=TRUE}
+data1<-aggregate(steps~interval,data,mean)
+plot(data1$interval,data1$steps,type="l",xlab="Number of Intervals",ylab="Average number of Steps",main="Average Number of Steps")
+maximum<-which.max(data1$steps)
+data1[maximum,]
+```
+
+Code to describe and show a strategy for imputing missing data:
+
+```{r,echo=TRUE}
+data_row<-data
+sum(is.na(data))
+data_imputed <- data_row
+for (i in 1:nrow(data_imputed)) {
+  if (is.na(data_imputed$steps[i])) {
+    interval_value <- data_imputed$interval[i]
+    steps_value <- steps_by_interval[
+      steps_by_interval$interval == interval_value,]
+    data_imputed$steps[i] <- steps_value$steps
+  }
+}
+df_imputed_steps_by_day <- aggregate(steps ~ date, data_imputed, sum)
+head(df_imputed_steps_by_day)
+mean(df_imputed_steps_by_day$steps)
+median(df_imputed_steps_by_day$steps)
+mean(steps_by_day$total)
+median(steps_by_day$total)
+```
+
+Histogram of the total number of steps taken each day after missing values are imputed:
+
+```{r,echo=TRUE}
+hist(df_imputed_steps_by_day$steps, main="Histogram of total number of steps per day (imputed)", 
+     xlab="Total number of steps in a day")
+```
+
+Panel plot comparing the average number of steps taken per 5-minute interval across weekdays and weekends
+
+```{r,echo=TRUE}
+data_imputed['type_of_day'] <- weekdays(as.Date(data_imputed$date))
+data_imputed$type_of_day[data_imputed$type_of_day  %in% c('Saturday','Sunday') ] <- "weekend"
+data_imputed$type_of_day[data_imputed$type_of_day != "weekend"] <- "weekday"
+data_imputed$type_of_day <- as.factor(data_imputed$type_of_day)
+
+df_imputed_steps_by_interval <- aggregate(steps ~ interval + type_of_day, data_imputed, mean)
+
+```
+
+All of the R code needed to reproduce the results (numbers, plots, etc.) in the report:
+
+```{r,echo=TRUE}
+library(ggplot2)
+qplot(interval,
+      steps, 
+      data = df_imputed_steps_by_interval, 
+      type = 'l', 
+      geom=c("line"),
+      xlab = "Interval", 
+      ylab = "Number of steps", 
+      main = "") +
+  facet_wrap(~ type_of_day, ncol = 1)
+```
+
+
+
+
+
+
