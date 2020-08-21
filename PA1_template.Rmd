@@ -7,7 +7,15 @@ output:
 
 
 ## Loading and preprocessing the data
-
+```{r,echo=TRUE}
+library(dplyr)
+fileURL<-"https://d396qusza40orc.cloudfront.net/repdata%2Fdata%2Factivity.zip"
+setwd("C:/Users/Kadambi cartel/Downloads/Motion Study")
+download.file(fileURL,destfile="./motion_study.zip")
+unzip("./motion_study.zip",exdir="./motion_study")
+data<-read.csv("./motion_study/activity.csv")
+head(data)
+```
 
 
 ## What is mean total number of steps taken per day?
