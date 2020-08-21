@@ -19,15 +19,50 @@ head(data)
 
 
 ## What is mean total number of steps taken per day?
-
+```{r,echo=TRUE}
+data3<-summarise(data1,mean_of_data=mean(steps,na.rm=TRUE),median_data=median(steps,na.rm=TRUE))
+head(data3)
+```
 
 
 ## What is the average daily activity pattern?
-
+```{r,echo=TRUE}
+steps_by_interval <- aggregate(steps ~ interval, data, mean)
+plot(steps_by_interval$interval, steps_by_interval$steps, type='l', 
+     main="Average number of steps over all days", xlab="Interval", 
+     ylab="Average number of steps")
+```
 
 
 ## Imputing missing values
-
+```{r,echo=TRUE}
+data_row<-data
+sum(is.na(data))
+data_imputed <- data_row
+for (i in 1:nrow(data_imputed)) {
+  if (is.na(data_imputed$steps[i])) {
+    interval_value <- data_imputed$interval[i]
+    steps_value <- steps_by_interval[
+      steps_by_interval$interval == interval_value,]
+    data_imputed$steps[i] <- steps_value$steps
+  }
+}
+df_imputed_steps_by_day <- aggregate(steps ~ date, data_imputed, sum)
+head(df_imputed_steps_by_day)
+mean(df_imputed_steps_by_day$steps)
+median(df_imputed_steps_by_day$steps)
+mean(steps_by_day$total)
+median(steps_by_day$total)
+```
 
 
 ## Are there differences in activity patterns between weekdays and weekends?
+```{r,echo=TRUE}
+data_imputed['type_of_day'] <- weekdays(as.Date(data_imputed$date))
+data_imputed$type_of_day[data_imputed$type_of_day  %in% c('Saturday','Sunday') ] <- "weekend"
+data_imputed$type_of_day[data_imputed$type_of_day != "weekend"] <- "weekday"
+data_imputed$type_of_day <- as.factor(data_imputed$type_of_day)
+
+df_imputed_steps_by_interval <- aggregate(steps ~ interval + type_of_day, data_imputed, mean)
+
+```
